@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	LINE_RE = `^(\S+\s+\S+\s+\S+\s+\S+\s+\S+)\s+(.+)$`
+	LINE_RE = `^(\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+)\s+(.+)$`
 )
 
 type Parser struct {
