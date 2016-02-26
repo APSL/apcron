@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/namsral/flag"
+	"flag"
+	"github.com/kelseyhightower/envconfig"
 	"log"
 	"os"
 	"os/signal"
@@ -10,24 +11,34 @@ import (
 	"syscall"
 )
 
+type Configuration struct {
+	CrontabPath string
+	NumCPU      int
+	SentryDSN   string
+	Verbose     bool
+}
+
 var (
-	crontabPath string
-	numCPU      int
+	configuration Configuration
 )
 
 func init() {
-	flag.StringVar(&crontabPath, "file", "crontab", "crontab file path")
-	flag.IntVar(&numCPU, "cpu", runtime.NumCPU(), "maximum number of CPUs")
+	configuration.CrontabPath = "crontab"
+	configuration.NumCPU = runtime.NumCPU()
+	envconfig.Process("CRON", &configuration)
+	flag.StringVar(&configuration.CrontabPath, "file", configuration.CrontabPath, "Crontab file path, env: CRON_CRONTABPATH")
+	flag.IntVar(&configuration.NumCPU, "cpu", configuration.NumCPU, "Maximum number of CPUs, env: CRON_NUMCPU")
+	flag.StringVar(&configuration.SentryDSN, "sentry", configuration.SentryDSN, "Sentry DSN to log unsuccesful commands, env: CRON_SENTRYDSN")
+	flag.BoolVar(&configuration.Verbose, "v", configuration.Verbose, "Show/log messages (CRON_VERBOSE)")
 }
 
 func main() {
 	flag.Parse()
+	runtime.GOMAXPROCS(configuration.NumCPU)
 
-	runtime.GOMAXPROCS(numCPU)
-
-	file, err := os.Open(crontabPath)
+	file, err := os.Open(configuration.CrontabPath)
 	if err != nil {
-		log.Fatalf("crontab path:%v err:%v", crontabPath, err)
+		log.Fatalf("crontab path:%v err:%v", configuration.CrontabPath, err)
 	}
 
 	parser, err := NewParser(file)

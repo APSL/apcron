@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// Specs must have 6 fields, the first is seconds
 	LINE_RE = `^(\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+)\s+(.+)$`
 )
 
