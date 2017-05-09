@@ -2,56 +2,60 @@ package main
 
 import (
 	"flag"
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
+	"path"
 	"sync"
 	"syscall"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Configuration struct {
-	CrontabPath string
-	NumCPU      int
-	SentryDSN   string
-	Verbose     bool
+	CrontabPath string `envconfig:"cron_file"`
+	SentryDSN   string `envconfig:"sentry_dsn"`
+	Verbose     bool   `envconfig:"cron_verbose"`
+	CmdPrefix   string `envconfig:"cron_cmd_prefix"`
 }
 
 var (
-	configuration Configuration
+	cfg Configuration
 )
 
 func init() {
-	configuration.CrontabPath = "crontab"
-	configuration.NumCPU = runtime.NumCPU()
-	envconfig.Process("CRON", &configuration)
-	flag.StringVar(&configuration.CrontabPath, "file", configuration.CrontabPath, "Crontab file path, env: CRON_CRONTABPATH")
-	flag.IntVar(&configuration.NumCPU, "cpu", configuration.NumCPU, "Maximum number of CPUs, env: CRON_NUMCPU")
-	flag.StringVar(&configuration.SentryDSN, "sentry", configuration.SentryDSN, "Sentry DSN to log unsuccesful commands, env: CRON_SENTRYDSN")
-	flag.BoolVar(&configuration.Verbose, "v", configuration.Verbose, "Show/log messages (CRON_VERBOSE)")
+	cfg.CrontabPath = "crontab"
+	envconfig.Process("", &cfg)
+	flag.StringVar(&cfg.CrontabPath, "file", cfg.CrontabPath, "Crontab file path, env: CRON_FILE")
+	flag.BoolVar(&cfg.Verbose, "v", cfg.Verbose, "Show/log messages, env: CRON_VERBOSE")
+	flag.StringVar(&cfg.SentryDSN, "sentry-dsn", cfg.SentryDSN, "Sentry DSN, env: SENTRY_DSN")
+	flag.StringVar(&cfg.CmdPrefix, "cmd-prefix", cfg.CmdPrefix, "Preffix to append to commands (ex: python manage.py). env: CRON_CMD_PREFIX")
 }
 
 func main() {
 	flag.Parse()
-	runtime.GOMAXPROCS(configuration.NumCPU)
 
-	file, err := os.Open(configuration.CrontabPath)
+	file, err := os.Open(cfg.CrontabPath)
 	if err != nil {
-		log.Fatalf("crontab path:%v err:%v", configuration.CrontabPath, err)
+		log.Fatalf("crontab path:%v err:%v", cfg.CrontabPath, err)
 	}
 
-	parser, err := NewParser(file)
-	if err != nil {
-		log.Fatalf("Parser read err:%v", err)
+	// Parse crontab or yaml
+	parse := ParseCron
+	ext := path.Ext(cfg.CrontabPath)
+	if ext == ".yaml" || ext == ".yml" {
+		parse = ParseYaml
 	}
 
-	runner, err := parser.Parse()
+	jobs, err := parse(file)
 	if err != nil {
-		log.Fatalf("Parser parse err:%v", err)
+		log.Fatalf("Error parsing cron file: %v", err)
 	}
 
 	file.Close()
+
+	runner := NewRunner(cfg.CmdPrefix)
+	runner.AddJobs(jobs)
 
 	var wg sync.WaitGroup
 	shutdown(runner, &wg)

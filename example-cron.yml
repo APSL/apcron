@@ -1,0 +1,21 @@
+# yaml cron definition
+
+#label:
+#    seconds: '0'
+#    minute: '*/15'
+#    hour: '0'
+#    monthday: '24'
+#    month: '12'
+#    weekday: '1'
+#    command: 'command_name'
+
+
+foo:
+    seconds: "*/5"
+    minute: "*"
+    command: 'echo "foo"'
+
+bar:
+    seconds: "0"
+    minute: '10,30,50'
+    command: echo bar
