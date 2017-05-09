@@ -1,0 +1,26 @@
+{
+	"ImportPath": "github.com/apsl/go-cron",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/certifi/gocertifi",
+			"Comment": "2017.04.17",
+			"Rev": "a9c833d2837d3b16888d55d5aafa9ffe9afb22b0"
+		},
+		{
+			"ImportPath": "github.com/getsentry/raven-go",
+			"Rev": "b68337dbf03e7fbb53d9fd9b63fd09b28e8f13f7"
+		},
+		{
+			"ImportPath": "github.com/kelseyhightower/envconfig",
+			"Comment": "v1.3.0-5-gb6fde16",
+			"Rev": "b6fde1625d631a48340817849a547164f395d9eb"
+		},
+		{
+			"ImportPath": "github.com/robfig/cron",
+			"Comment": "v1-53-gdf38d32",
+			"Rev": "df38d32658d8788cd446ba74db4bb5375c4b0cb3"
+		}
+	]
+}
