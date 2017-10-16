@@ -9,7 +9,7 @@ import (
 )
 
 type CronJob struct {
-	Second   string `yaml:"seconds"`
+	Second   string `yaml:"second"`
 	Minute   string `yaml:"minute"`
 	Hour     string `yaml:"hour"`
 	MonthDay string `yaml:"monthday"`
@@ -19,9 +19,9 @@ type CronJob struct {
 }
 type CronJobs map[string]CronJob
 
-func val(s string) string {
+func val(s string, d string) string {
 	if s == "" {
-		return "*"
+		return d
 	}
 	return s
 }
@@ -29,8 +29,8 @@ func val(s string) string {
 //Spec returns crontab spec (without command)
 func (c *CronJob) Spec() string {
 	return fmt.Sprintf("%s %s %s %s %s %s",
-		val(c.Second), val(c.Minute), val(c.Hour),
-		val(c.MonthDay), val(c.Month), val(c.WeekDay))
+		val(c.Second, "0"), val(c.Minute, "*"), val(c.Hour, "*"),
+		val(c.MonthDay, "*"), val(c.Month, "*"), val(c.WeekDay, "*"))
 }
 
 //ParseYaml parses a yaml and returns a Job slice
