@@ -11,11 +11,11 @@
 
 
 foo:
-    seconds: "*/5"
+    second: "*/5"
     minute: "*"
     command: 'echo "foo"'
 
 bar:
-    seconds: "0"
+    second: "0"
     minute: '10,30,50'
     command: echo bar

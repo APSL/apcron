@@ -54,26 +54,28 @@ func main() {
 
 	file.Close()
 
-	runner := NewRunner(cfg.CmdPrefix)
-	runner.AddJobs(jobs)
+	manager := NewManager()
+	manager.Start()
+	crond := NewCrond(cfg.CmdPrefix, manager)
+	crond.AddJobs(jobs)
 
 	var wg sync.WaitGroup
-	shutdown(runner, &wg)
+	shutdownSignal(crond, &wg)
 
-	runner.Start()
 	wg.Add(1)
+	crond.Start()
 
 	wg.Wait()
 	log.Println("End cron")
 }
 
-func shutdown(runner *Runner, wg *sync.WaitGroup) {
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+func shutdownSignal(c *Crond, wg *sync.WaitGroup) {
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		s := <-c
+		s := <-sig
 		log.Println("Got signal: ", s)
-		runner.Stop()
+		c.Stop()
 		wg.Done()
 	}()
 }
