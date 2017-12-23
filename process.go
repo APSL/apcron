@@ -14,18 +14,22 @@ import (
 
 type Process struct {
 	sync.RWMutex
-	Pid  int
-	Done chan struct{}
-	wg   sync.WaitGroup
-	Job  *Job
-	Cmd  *exec.Cmd
+	Pid int
+	// Done chan struct{}
+	wg    sync.WaitGroup
+	ID    int
+	JobID int
+	Cmd   string
+	cmd   *exec.Cmd
 }
 
-func NewProcess(job *Job) *Process {
+func NewProcess(job *Job, id int) *Process {
+	// strconv.Itoa(job.ID), job.Cmd
 	p := &Process{
-		Done: make(chan struct{}),
-		Pid:  0,
-		Job:  job,
+		// Done: make(chan struct{}),
+		ID:    id,
+		JobID: job.ID,
+		Cmd:   job.Cmd,
 	}
 	return p
 }
@@ -48,45 +52,46 @@ func (p *Process) GetPid() int {
 
 func (p *Process) String() string {
 	if p.Pid != 0 {
-		return fmt.Sprintf("[%d-%d]", p.Job.ID, p.GetPid())
+		return fmt.Sprintf("[%d/%d/%d]", p.JobID, p.ID, p.GetPid())
 	}
-	return fmt.Sprintf("[Job%d]", p.Job.ID)
+	return fmt.Sprintf("[%d/%d/-]", p.JobID, p.ID)
 }
 
 func (p *Process) Run(done chan int) int {
-	log.Printf("Process: running %s\n", p.Job.Cmd)
-	p.Cmd = exec.Command("bash", "-c", p.Job.Cmd)
-	stdout, err := p.Cmd.StdoutPipe()
+	log.Printf("Process: starting %s: %s\n", p, p.Cmd)
+	p.cmd = exec.Command("bash", "-c", p.Cmd)
+	stdout, err := p.cmd.StdoutPipe()
 	if err != nil {
-		log.Printf("Error reading stout for %s: %v\n", p.Job.Cmd, err)
+		log.Printf("Error reading stout for %s: %v\n", p.Cmd, err)
 	}
-	stderr, err := p.Cmd.StderrPipe()
+	stderr, err := p.cmd.StderrPipe()
 	if err != nil {
-		log.Printf("Error reading stderr for %s: %v\n", p.Job.Cmd, err)
+		log.Printf("Error reading stderr for %s: %v\n", p.Cmd, err)
 	}
 	red := color.New(color.FgRed).SprintFunc()
+	blue := color.New(color.FgBlue).SprintFunc()
 	p.wg.Add(2)
-	go p.outPrinter(stdout, red("--out-->"))
-	go p.outPrinter(stderr, "--err-->")
-	p.Cmd.Start()
+	go p.outPrinter(stdout, blue("[II]"))
+	go p.outPrinter(stderr, red("[EE]"))
+	p.cmd.Start()
 	if err != nil {
-		log.Printf("Error starting  cmd %s: %v\n", p.Job.Cmd, err)
+		log.Printf("Error starting  cmd %s: %v\n", p.Cmd, err)
 	}
-	p.setPid(p.Cmd.Process.Pid)
+	p.setPid(p.cmd.Process.Pid)
 	log.Printf("Process: %s Started\n", p)
 	go func() {
-		p.Cmd.Wait()
+		p.cmd.Wait()
 		// if err != nil {
 		// 	log.Printf("Error executing command:%v out:%v err:%v", cmd, string(out), err)
 		// 	sentryLog(cmd, out, err)
 		// } else if cfg.Verbose {
 		// 	log.Printf("cmd:%v out:%v err:%v", cmd, string(out), err)
 		// }
-		log.Printf("Process: %s Done. waiting for outpritner\n", p)
+		log.Printf("Process: %s Done. waiting for stdout and stderr printers to end...\n", p)
 		p.wg.Wait()
 		log.Printf("Process: %s Finished  \n", p)
-		done <- p.Pid
-		p.Done <- struct{}{}
+		done <- p.JobID
+		//p.Done <- struct{}{}
 	}()
 	return p.Pid
 }
@@ -94,7 +99,7 @@ func (p *Process) outPrinter(r io.Reader, prefix string) {
 	defer p.wg.Done()
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		log.Printf("[%d] %s %s\n", p.Pid, prefix, scanner.Text())
+		log.Printf("%s %s %s\n", p, prefix, scanner.Text())
 	}
 	// if err := scanner.Err(); err != nil {
 	// 	fmt.Fprintf(os.Stderr, "reading stdout for %s:  %v\n", cmd, err)
