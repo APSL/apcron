@@ -22,7 +22,7 @@ type Process struct {
 	cmd   *exec.Cmd
 }
 
-func NewProcess(cmd string, jobId, id int) *Process {
+func New(cmd string, jobId, id int) *Process {
 	// strconv.Itoa(job.ID), job.Cmd
 	p := &Process{
 		// Done: make(chan struct{}),
@@ -53,38 +53,42 @@ func (p *Process) String() string {
 }
 
 //Run exec the process and starts printing its sdout and stderr in parallel.
-func (p *Process) Run(done chan int) int {
+func (p *Process) Run(done chan int) (err error) {
 	log.Printf("Process: starting %s: %s\n", p, p.Cmd)
-	p.cmd = exec.Command("bash", "-c", p.Cmd)
+	p.cmd = exec.Command("xbash", "-c", p.Cmd)
 
 	stdout, err := p.cmd.StdoutPipe()
 	if err != nil {
 		log.Printf("Error reading stout for %s: %v\n", p.Cmd, err)
+		return
 	}
 	stderr, err := p.cmd.StderrPipe()
 	if err != nil {
 		log.Printf("Error reading stderr for %s: %v\n", p.Cmd, err)
+		return
 	}
 
+	err = p.cmd.Start()
+	if err != nil {
+		return
+	}
+
+	p.setPid(p.cmd.Process.Pid)
+	log.Printf("Process: %s Started\n", p)
 	p.wg.Add(2)
 	go p.outPrinter(stdout, "[II]", color.FgBlue)
 	go p.outPrinter(stderr, "[EE]", color.FgRed)
 
-	p.cmd.Start()
-	if err != nil {
-		log.Printf("Error starting  cmd %s: %v\n", p.Cmd, err)
-	}
-	p.setPid(p.cmd.Process.Pid)
-	log.Printf("Process: %s Started\n", p)
-
 	go func() {
-		p.wg.Wait()  //Waits for outPrinter to exit
-		p.cmd.Wait() //Waits for os.Exec Cmd to exit. Will close pipes.
+		p.wg.Wait()        //Waits for outPrinter to exit
+		err = p.cmd.Wait() //Waits for os.Exec Cmd to exit. Will close pipes.
+		if err != nil {
+			log.Printf("process: Exec Error: %s\n", err)
+		}
 		log.Printf("Process: %s Finished  \n", p)
 		done <- p.JobID
 	}()
-
-	return p.Pid
+	return nil
 }
 func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
 	color := color.New(c).SprintFunc()
@@ -95,7 +99,7 @@ func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
 		log.Printf("%s %s %s\n", p, prefix, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error scanning out for %d:  %v\n", p.ID, err)
+		fmt.Fprintf(os.Stderr, "process.outPrinter: Error scanning out for %d:  %v\n", p.ID, err)
 	}
 }
 

@@ -41,8 +41,12 @@ func (j *Job) start() {
 		return
 	}
 	processID := j.count
-	p := process.NewProcess(j.cmd, j.id, processID)
-	p.Run(j.done)
+	p := process.New(j.cmd, j.id, processID)
+	err := p.Run(j.done)
+	if err != nil {
+		log.Printf("Run.start: Error launching process %s: %s", p, err)
+		return
+	}
 	j.process = p
 	j.count++
 	log.Printf("Run.start: launched process %s\n", p)
