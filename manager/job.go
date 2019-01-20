@@ -14,6 +14,7 @@ type Job struct {
 	sync.RWMutex
 	id      int
 	cmd     string
+	Spec    string //not used in manager, only for showing info
 	process *process.Process
 	count   int
 	done    chan int //Chan to receive
@@ -23,6 +24,11 @@ type Job struct {
 //GetID returns job ID
 func (j *Job) GetID() int {
 	return j.id
+}
+
+//GetCmd returns job cmd
+func (j *Job) GetCmd() string {
+	return j.cmd
 }
 
 //Run runs  a Job on the manager and returns not waiting for process fininsh

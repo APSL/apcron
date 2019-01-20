@@ -35,7 +35,7 @@ func New() *Manager {
 //RunAndWait runs  a Job on the manager and wait for process end
 
 //CreateJob creates a new manager.Job from a command string
-func (m *Manager) CreateJob(cmd string) (j *Job, err error) {
+func (m *Manager) CreateJob(cmd, spec string) (j *Job, err error) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -46,6 +46,7 @@ func (m *Manager) CreateJob(cmd string) (j *Job, err error) {
 
 	j = &Job{
 		cmd:     cmd,
+		Spec:    spec,
 		count:   0,
 		process: nil,
 		done:    m.done,
@@ -94,7 +95,7 @@ func (m *Manager) Start() {
 	}()
 	go func() {
 		for {
-			time.Sleep(3600 * time.Second)
+			time.Sleep(10 * time.Second)
 			go m.PrintStats()
 		}
 	}()

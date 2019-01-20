@@ -22,10 +22,10 @@ type Process struct {
 	cmd   *exec.Cmd
 }
 
+// New creates new Process manager. It Does not actually launch process.
 func New(cmd string, jobId, id int) *Process {
 	// strconv.Itoa(job.ID), job.Cmd
 	p := &Process{
-		// Done: make(chan struct{}),
 		ID:    id,
 		JobID: jobId,
 		Cmd:   cmd,
@@ -39,6 +39,7 @@ func (p *Process) setPid(pid int) {
 	p.Pid = pid
 }
 
+//GetPid returns process pid
 func (p *Process) GetPid() int {
 	p.RLock()
 	defer p.RUnlock()
@@ -53,24 +54,24 @@ func (p *Process) String() string {
 }
 
 //Run exec the process and starts printing its sdout and stderr in parallel.
-func (p *Process) Run(done chan int) (err error) {
+func (p *Process) Run(done chan int) error {
 	log.Printf("Process: starting %s: %s\n", p, p.Cmd)
-	p.cmd = exec.Command("xbash", "-c", p.Cmd)
+	p.cmd = exec.Command("sh", "-c", p.Cmd)
 
 	stdout, err := p.cmd.StdoutPipe()
 	if err != nil {
 		log.Printf("Error reading stout for %s: %v\n", p.Cmd, err)
-		return
+		return err
 	}
 	stderr, err := p.cmd.StderrPipe()
 	if err != nil {
 		log.Printf("Error reading stderr for %s: %v\n", p.Cmd, err)
-		return
+		return err
 	}
 
 	err = p.cmd.Start()
 	if err != nil {
-		return
+		return err
 	}
 
 	p.setPid(p.cmd.Process.Pid)
@@ -91,9 +92,9 @@ func (p *Process) Run(done chan int) (err error) {
 	return nil
 }
 func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
+	defer p.wg.Done()
 	color := color.New(c).SprintFunc()
 	prefix = color(prefix)
-	defer p.wg.Done()
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		log.Printf("%s %s %s\n", p, prefix, scanner.Text())

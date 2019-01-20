@@ -2,14 +2,18 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/apsl/apcron/manager"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/olekukonko/tablewriter"
 	"github.com/robfig/cron"
 )
 
@@ -58,26 +62,31 @@ func main() {
 	mgr := manager.New()
 	cron := cron.New()
 	for _, cs := range cmdSpecs {
-		job, err := mgr.CreateJob(cs.Cmd)
+		job, err := mgr.CreateJob(cs.Cmd, cs.Spec)
 		if err != nil {
 			log.Printf("Error creating job (%s) in manager: %v\n", cs.Cmd, err)
 			return
 		}
 		cron.AddJob(cs.Spec, job)
-		log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s", job.GetID(), cs.Spec, cs.Cmd)
+		// log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s", job.GetID(), cs.Spec, cs.Cmd)
 	}
 	mgr.Start()
 	cron.Start()
 
-	// fmt.Println("Jobs Added:")
-	// table := tablewriter.NewWriter(os.Stdout)
-	// table.SetHeader([]string{"ID", "SPEC", "CMD"})
-	// table.SetAutoWrapText(false)
-	// for _, j := range c.Jobs {
-	// 	data := []string{strconv.Itoa(j.ID), j.Spec, j.Cmd}
-	// 	table.Append(data)
-	// }
-	// table.Render()
+	fmt.Println("Jobs Added:")
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "SPEC", "NEXT", "CMD"})
+	table.SetAutoWrapText(false)
+
+	es := cron.Entries()
+	for _, e := range es {
+		job := e.Job.(*manager.Job)
+		dif := e.Next.Sub(time.Now())
+		next := fmt.Sprintf("%s (%s)", dif, e.Next.String())
+		data := []string{strconv.Itoa(job.GetID()), job.Spec, next, job.GetCmd()}
+		table.Append(data)
+	}
+	table.Render()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
