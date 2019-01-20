@@ -6,10 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"sync"
 	"syscall"
 
+	"github.com/apsl/apcron/manager"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/robfig/cron"
 )
 
 type Configuration struct {
@@ -47,35 +48,41 @@ func main() {
 		parse = ParseYaml
 	}
 
-	jobs, err := parse(file)
+	cmdSpecs, err := parse(file)
 	if err != nil {
 		log.Fatalf("Error parsing cron file: %v", err)
 	}
 
 	file.Close()
 
-	manager := NewManager()
-	manager.Start()
-	crond := NewCrond(cfg.CmdPrefix, manager)
-	crond.AddJobs(jobs)
+	mgr := manager.New()
+	cron := cron.New()
+	for _, cs := range cmdSpecs {
+		job, err := mgr.CreateJob(cs.Cmd)
+		if err != nil {
+			log.Printf("Error creating job (%s) in manager: %v\n", cs.Cmd, err)
+			return
+		}
+		cron.AddJob(cs.Spec, job)
+		log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s", job.GetID(), cs.Spec, cs.Cmd)
+	}
+	mgr.Start()
+	cron.Start()
 
-	var wg sync.WaitGroup
-	shutdownSignal(crond, &wg)
+	// fmt.Println("Jobs Added:")
+	// table := tablewriter.NewWriter(os.Stdout)
+	// table.SetHeader([]string{"ID", "SPEC", "CMD"})
+	// table.SetAutoWrapText(false)
+	// for _, j := range c.Jobs {
+	// 	data := []string{strconv.Itoa(j.ID), j.Spec, j.Cmd}
+	// 	table.Append(data)
+	// }
+	// table.Render()
 
-	wg.Add(1)
-	crond.Start()
-
-	wg.Wait()
-	log.Println("End cron")
-}
-
-func shutdownSignal(c *Crond, wg *sync.WaitGroup) {
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		s := <-sig
-		log.Println("Got signal: ", s)
-		c.Stop()
-		wg.Done()
-	}()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	s := <-c
+	log.Printf("Got signal: %s. Exiting apcron.\n", s)
+	cron.Stop()
+	//mgr.Stop()
 }

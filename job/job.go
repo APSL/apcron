@@ -1,4 +1,4 @@
-package main
+package job
 
 // Job is the cron spec to be parsed by a cron parser
 // Spec is the crontab format string
@@ -6,7 +6,6 @@ package main
 type Job struct {
 	Spec string
 	Cmd  string
-	ID   int
 }
 
 // func (j *Job) Run() {

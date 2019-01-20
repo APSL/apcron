@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/apsl/apcron/job"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -34,7 +35,7 @@ func (c *CronJob) Spec() string {
 }
 
 //ParseYaml parses a yaml and returns a Job slice
-func ParseYaml(r io.Reader) (jobs []Job, err error) {
+func ParseYaml(r io.Reader) (jobs []job.Job, err error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
@@ -45,7 +46,7 @@ func ParseYaml(r io.Reader) (jobs []Job, err error) {
 		return
 	}
 	for _, cronJob := range cronJobs {
-		job := Job{
+		job := job.Job{
 			Spec: cronJob.Spec(),
 			Cmd:  cronJob.Command,
 		}
