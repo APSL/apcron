@@ -8,10 +8,12 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	"github.com/fatih/color"
 )
 
+//Process represents main Process info. Contains pointer to os.Exec.Cmd
 type Process struct {
 	sync.RWMutex
 	Pid   int
@@ -56,7 +58,9 @@ func (p *Process) String() string {
 //Run exec the process and starts printing its sdout and stderr in parallel.
 func (p *Process) Run(done chan int) error {
 	log.Printf("Process: starting %s: %s\n", p, p.Cmd)
+	p.Lock()
 	p.cmd = exec.Command("sh", "-c", p.Cmd)
+	p.Unlock()
 
 	stdout, err := p.cmd.StdoutPipe()
 	if err != nil {
@@ -91,6 +95,17 @@ func (p *Process) Run(done chan int) error {
 	}()
 	return nil
 }
+
+//GetMaxRss gets max Rss memory usage for the process
+func (p *Process) GetMaxRss() int64 {
+	p.RLock()
+	defer p.RUnlock()
+	if p.cmd.ProcessState == nil {
+		return 0
+	}
+	return p.cmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+}
+
 func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
 	defer p.wg.Done()
 	color := color.New(c).SprintFunc()

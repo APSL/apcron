@@ -19,6 +19,7 @@ type Job struct {
 	count   int
 	done    chan int //Chan to receive
 	run     chan int //Chan to signal manager job run request
+	Stats   JobStats
 }
 
 //GetID returns job ID
@@ -34,7 +35,7 @@ func (j *Job) GetCmd() string {
 //Run runs  a Job on the manager and returns not waiting for process fininsh
 //We could wait, but seems that external scheduler do not need this by now.
 func (j *Job) Run() {
-	log.Println("Job.Run: sending job to manager")
+	log.Printf("Job.Run: sending job %d to manager", j.GetID())
 	// go j.start()
 	j.run <- j.id
 }
@@ -66,7 +67,12 @@ func (j *Job) finish() {
 		return
 	}
 	pid := j.process.GetPid()
+	j.addStats()
 	j.process = nil
 	log.Printf("Job.finish ended [%d]. pid %d\n", j.id, pid)
 	runtime.GC() //Force Garbage Collection of process.
+}
+
+func (j *Job) addStats() {
+	j.Stats.AddRss(j.process.GetMaxRss())
 }
