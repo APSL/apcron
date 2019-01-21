@@ -109,7 +109,7 @@ func (m *Manager) PrintStats() {
 	}
 	fmt.Println("Current Jobs:")
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "STATUS", "PID", "COUNT", "CMD"})
+	table.SetHeader([]string{"ID", "STATUS", "PID", "COUNT", "MEANRSS", "MAXRSS", "CMD"})
 	table.SetAutoWrapText(false)
 	var id, status, pid, count, cmd string
 	// for jobID, js := range m.Jobs {
@@ -124,7 +124,9 @@ func (m *Manager) PrintStats() {
 			status = "running"
 			pid = strconv.Itoa(job.process.GetPid())
 		}
-		data := []string{id, status, pid, count, cmd}
+		meanrss := fmt.Sprintf("%.2f MB", job.Stats.MeanRss/1024)
+		maxrss := fmt.Sprintf("%.2f MB", job.Stats.MaxRss/1024)
+		data := []string{id, status, pid, count, meanrss, maxrss, cmd}
 		table.Append(data)
 	}
 	table.Render()

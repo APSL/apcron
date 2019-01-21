@@ -73,20 +73,7 @@ func main() {
 	mgr.Start()
 	cron.Start()
 
-	fmt.Println("Jobs Added:")
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "SPEC", "NEXT", "CMD"})
-	table.SetAutoWrapText(false)
-
-	es := cron.Entries()
-	for _, e := range es {
-		job := e.Job.(*manager.Job)
-		dif := e.Next.Sub(time.Now())
-		next := fmt.Sprintf("%s (%s)", dif, e.Next.String())
-		data := []string{strconv.Itoa(job.GetID()), job.Spec, next, job.GetCmd()}
-		table.Append(data)
-	}
-	table.Render()
+	printJobsTable(cron.Entries())
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -94,4 +81,19 @@ func main() {
 	log.Printf("Got signal: %s. Exiting apcron.\n", s)
 	cron.Stop()
 	//mgr.Stop()
+}
+
+func printJobsTable(entries []*cron.Entry) {
+	fmt.Println("Jobs Added:")
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "SPEC", "NEXT", "CMD"})
+	table.SetAutoWrapText(false)
+	for _, e := range entries {
+		job := e.Job.(*manager.Job)
+		dif := e.Next.Sub(time.Now())
+		next := fmt.Sprintf("%s (%s)", dif, e.Next.String())
+		data := []string{strconv.Itoa(job.GetID()), job.Spec, next, job.GetCmd()}
+		table.Append(data)
+	}
+	table.Render()
 }
