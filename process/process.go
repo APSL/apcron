@@ -8,10 +8,12 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 
 	"github.com/fatih/color"
 )
 
+//Process represents main Process info. Contains pointer to os.Exec.Cmd
 type Process struct {
 	sync.RWMutex
 	Pid   int
@@ -91,6 +93,15 @@ func (p *Process) Run(done chan int) error {
 	}()
 	return nil
 }
+
+//GetMaxRss gets max Rss memory usage for the process
+func (p *Process) GetMaxRss() int64 {
+	if p.cmd.ProcessState == nil {
+		return 0
+	}
+	return p.cmd.ProcessState.SysUsage().(*syscall.Rusage).Maxrss
+}
+
 func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
 	defer p.wg.Done()
 	color := color.New(c).SprintFunc()

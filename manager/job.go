@@ -19,6 +19,7 @@ type Job struct {
 	count   int
 	done    chan int //Chan to receive
 	run     chan int //Chan to signal manager job run request
+	Stats   JobStats
 }
 
 //GetID returns job ID
@@ -66,7 +67,12 @@ func (j *Job) finish() {
 		return
 	}
 	pid := j.process.GetPid()
+	j.AddStats()
 	j.process = nil
 	log.Printf("Job.finish ended [%d]. pid %d\n", j.id, pid)
 	runtime.GC() //Force Garbage Collection of process.
+}
+
+func (j *Job) AddStats() {
+	j.Stats.AddRss(j.process.GetMaxRss())
 }
