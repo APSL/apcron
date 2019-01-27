@@ -1,0 +1,22 @@
+# yaml cron definition
+
+#label:
+#    second: '0'
+#    minute: '*/15'
+#    hour: '0'
+#    monthday: '24'
+#    month: '12'
+#    weekday: '1'
+#    command: 'command_name'
+#    shell: bash
+
+
+foo:
+    second: "*/5"
+    minute: "*"
+    command: echo "This is an stdout message";echo "This is an stderr error" >&2 ;sleep 10; echo "bye"
+    shell: sh
+
+bar:
+    second: '10,20,30,50'
+    command: du -hs /tmp 

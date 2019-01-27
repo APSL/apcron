@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path"
 	"strconv"
 	"syscall"
 	"time"
@@ -46,14 +45,7 @@ func main() {
 		log.Fatalf("crontab path:%v err:%v", cfg.CrontabPath, err)
 	}
 
-	// Parse crontab or yaml
-	parse := parser.ParseCron
-	ext := path.Ext(cfg.CrontabPath)
-	if ext == ".yaml" || ext == ".yml" {
-		parse = parser.ParseYaml
-	}
-
-	cmdSpecs, err := parse(file)
+	jobDefs, err := parser.ParseYaml(file)
 	if err != nil {
 		log.Fatalf("Error parsing cron file: %v", err)
 	}
@@ -62,14 +54,17 @@ func main() {
 
 	mgr := manager.New()
 	cron := cron.New()
-	for _, cs := range cmdSpecs {
-		job, err := mgr.CreateJob(cs.Cmd, cs.Spec, cs.Shell)
+	for _, jd := range jobDefs {
+		if cfg.CmdPrefix != "" {
+			jd.Cmd = cfg.CmdPrefix + " " + jd.Cmd
+		}
+		job, err := mgr.CreateJob(jd.Cmd, jd.Spec, jd.Shell)
 		if err != nil {
-			log.Printf("Error creating job (%s) in manager: %v\n", cs.Cmd, err)
+			log.Printf("Error creating job (%s) in manager: %v\n", jd.Cmd, err)
 			return
 		}
-		cron.AddJob(cs.Spec, job)
-		log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s, shell=%s", job.GetID(), cs.Spec, cs.Cmd, cs.Shell)
+		cron.AddJob(jd.Spec, job)
+		log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s, shell=%s", job.GetID(), jd.Spec, jd.Cmd, jd.Shell)
 	}
 	mgr.Start()
 	cron.Start()
