@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/apsl/apcron/manager"
+	"github.com/apsl/apcron/parser"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/olekukonko/tablewriter"
 	"github.com/robfig/cron"
@@ -29,7 +30,7 @@ var (
 )
 
 func init() {
-	cfg.CrontabPath = "crontab"
+	cfg.CrontabPath = "crontab.yaml"
 	envconfig.Process("", &cfg)
 	flag.StringVar(&cfg.CrontabPath, "file", cfg.CrontabPath, "Crontab file path, env: CRON_FILE")
 	flag.BoolVar(&cfg.Verbose, "v", cfg.Verbose, "Show/log messages, env: CRON_VERBOSE")
@@ -46,10 +47,10 @@ func main() {
 	}
 
 	// Parse crontab or yaml
-	parse := ParseCron
+	parse := parser.ParseCron
 	ext := path.Ext(cfg.CrontabPath)
 	if ext == ".yaml" || ext == ".yml" {
-		parse = ParseYaml
+		parse = parser.ParseYaml
 	}
 
 	cmdSpecs, err := parse(file)
@@ -62,13 +63,13 @@ func main() {
 	mgr := manager.New()
 	cron := cron.New()
 	for _, cs := range cmdSpecs {
-		job, err := mgr.CreateJob(cs.Cmd, cs.Spec)
+		job, err := mgr.CreateJob(cs.Cmd, cs.Spec, cs.Shell)
 		if err != nil {
 			log.Printf("Error creating job (%s) in manager: %v\n", cs.Cmd, err)
 			return
 		}
 		cron.AddJob(cs.Spec, job)
-		// log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s", job.GetID(), cs.Spec, cs.Cmd)
+		log.Printf("Scheduled job: id=%d. specs=%s, cmd=%s, shell=%s", job.GetID(), cs.Spec, cs.Cmd, cs.Shell)
 	}
 	mgr.Start()
 	cron.Start()

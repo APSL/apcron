@@ -1,3 +1,0 @@
-# comment
-*/6 * * * * * echo starting ;sleep 1; echo "hola";echo "hierr" >&2 ;sleep 20; echo "bye"
-*/3 * * * * * echo "Another task"

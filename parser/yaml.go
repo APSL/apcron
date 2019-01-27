@@ -1,11 +1,11 @@
-package main
+package parser
 
 import (
 	"fmt"
 	"io"
 	"io/ioutil"
 
-	"github.com/apsl/apcron/job"
+	"github.com/apsl/apcron/jobdef"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -17,6 +17,7 @@ type CronJob struct {
 	Month    string `yaml:"month"`
 	WeekDay  string `yaml:"weekday"`
 	Command  string `yaml:"command"`
+	Shell    string `yaml:"shell"`
 }
 type CronJobs map[string]CronJob
 
@@ -35,7 +36,7 @@ func (c *CronJob) Spec() string {
 }
 
 //ParseYaml parses a yaml and returns a Job slice
-func ParseYaml(r io.Reader) (jobs []job.Job, err error) {
+func ParseYaml(r io.Reader) (jobs []jobdef.Job, err error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
@@ -46,9 +47,10 @@ func ParseYaml(r io.Reader) (jobs []job.Job, err error) {
 		return
 	}
 	for _, cronJob := range cronJobs {
-		job := job.Job{
-			Spec: cronJob.Spec(),
-			Cmd:  cronJob.Command,
+		job := jobdef.Job{
+			Spec:  cronJob.Spec(),
+			Cmd:   cronJob.Command,
+			Shell: cronJob.Shell,
 		}
 		jobs = append(jobs, job)
 	}

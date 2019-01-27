@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apsl/apcron/job"
+	"github.com/apsl/apcron/jobdef"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 )
 
 // ParseCron parses crontab format and returns a Runner
-func ParseCron(r io.Reader) (jobs []job.Job, err error) {
+func ParseCron(r io.Reader) (jobs []jobdef.Job, err error) {
 	rp, _ := regexp.Compile(lineRegexp)
 	scanner := bufio.NewScanner(r)
 
@@ -27,11 +27,11 @@ func ParseCron(r io.Reader) (jobs []job.Job, err error) {
 		}
 		if rp.MatchString(line) == true {
 			m := rp.FindStringSubmatch(line)
-			job := job.Job{
+			jobdef := jobdef.Job{
 				Spec: m[1],
 				Cmd:  m[2],
 			}
-			jobs = append(jobs, job)
+			jobs = append(jobs, jobdef)
 		}
 	}
 

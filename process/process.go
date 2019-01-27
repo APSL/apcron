@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -21,16 +22,18 @@ type Process struct {
 	ID    int
 	JobID int
 	Cmd   string
+	shell string
 	cmd   *exec.Cmd
 }
 
 // New creates new Process manager. It Does not actually launch process.
-func New(cmd string, jobId, id int) *Process {
+func New(cmd, shell string, jobID, id int) *Process {
 	// strconv.Itoa(job.ID), job.Cmd
 	p := &Process{
 		ID:    id,
-		JobID: jobId,
+		JobID: jobID,
 		Cmd:   cmd,
+		shell: shell,
 	}
 	return p
 }
@@ -59,7 +62,12 @@ func (p *Process) String() string {
 func (p *Process) Run(done chan int) error {
 	log.Printf("Process: starting %s: %s\n", p, p.Cmd)
 	p.Lock()
-	p.cmd = exec.Command("sh", "-c", p.Cmd)
+	if p.shell != "" {
+		p.cmd = exec.Command(p.shell, "-c", p.Cmd)
+	} else {
+		cmd := strings.Split(p.Cmd, " ")
+		p.cmd = exec.Command(cmd[0], cmd[1:]...)
+	}
 	p.Unlock()
 
 	stdout, err := p.cmd.StdoutPipe()

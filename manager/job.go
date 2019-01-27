@@ -14,6 +14,7 @@ type Job struct {
 	sync.RWMutex
 	id      int
 	cmd     string
+	shell   string
 	Spec    string //not used in manager, only for showing info
 	process *process.Process
 	count   int
@@ -48,7 +49,7 @@ func (j *Job) start() {
 		return
 	}
 	processID := j.count
-	p := process.New(j.cmd, j.id, processID)
+	p := process.New(j.cmd, j.shell, j.id, processID)
 	err := p.Run(j.done)
 	if err != nil {
 		log.Printf("Run.start: Error launching process %s: %s", p, err)

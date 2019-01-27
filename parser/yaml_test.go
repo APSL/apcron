@@ -1,9 +1,11 @@
-package main
+package parser
 
 import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/apsl/apcron/jobdef"
 )
 
 func TestYamlParser(t *testing.T) {
@@ -22,10 +24,10 @@ baz:
     hour: '3'
     command: 'baz_command'
 `
-	expectedJobs := []Job{
-		Job{Spec: "3 */1 * * * *", Cmd: "foo_command"},
-		Job{Spec: "0 10,30,50 * * * *", Cmd: "bar_command"},
-		Job{Spec: "0 10 3 * * *", Cmd: "baz_command"},
+	expectedJobs := []jobdef.Job{
+		jobdef.Job{Spec: "3 */1 * * * *", Cmd: "foo_command"},
+		jobdef.Job{Spec: "0 10,30,50 * * * *", Cmd: "bar_command"},
+		jobdef.Job{Spec: "0 10 3 * * *", Cmd: "baz_command"},
 	}
 	strReader := strings.NewReader(s)
 	jobs, err := ParseYaml(strReader)
