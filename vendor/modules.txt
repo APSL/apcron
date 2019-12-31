@@ -1,24 +1,24 @@
-# github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448
+# github.com/certifi/gocertifi v0.0.0-20191021191039-0944d244cd40
 github.com/certifi/gocertifi
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/getsentry/raven-go v0.2.0
 github.com/getsentry/raven-go
-# github.com/kelseyhightower/envconfig v1.3.0
+# github.com/kelseyhightower/envconfig v1.4.0
 github.com/kelseyhightower/envconfig
-# github.com/mattn/go-colorable v0.1.0
+# github.com/mattn/go-colorable v0.1.4
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.4
+# github.com/mattn/go-isatty v0.0.11
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.4
+# github.com/mattn/go-runewidth v0.0.7
 github.com/mattn/go-runewidth
-# github.com/olekukonko/tablewriter v0.0.1
+# github.com/olekukonko/tablewriter v0.0.4
 github.com/olekukonko/tablewriter
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
+# github.com/robfig/cron v1.2.0
 github.com/robfig/cron
-# golang.org/x/sys v0.0.0-20190209173611-3b5209105503
+# golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8
 golang.org/x/sys/unix
-# gopkg.in/yaml.v2 v2.2.2
+# gopkg.in/yaml.v2 v2.2.7
 gopkg.in/yaml.v2
