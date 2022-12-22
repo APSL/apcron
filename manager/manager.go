@@ -96,7 +96,7 @@ func (m *Manager) Start() {
 	}()
 	go func() {
 		for {
-			time.Sleep(10 * time.Second)
+			time.Sleep(4 * 60 * time.Second)
 			go m.PrintStats()
 		}
 	}()

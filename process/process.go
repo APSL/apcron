@@ -96,7 +96,19 @@ func (p *Process) Run(done chan int) error {
 		p.wg.Wait()        //Waits for outPrinter to exit
 		err = p.cmd.Wait() //Waits for os.Exec Cmd to exit. Will close pipes.
 		if err != nil {
-			log.Printf("process: Exec Error: %s\n", err)
+			log.Printf("process.Run: finished with Error: %s\n", err)
+			// sentry.WithScope(func(scope *sentry.Scope) {
+			// 	scope.SetTag("apcron-version", "v")
+			// 	scope.SetExtra("jobCmd", p.Cmd)
+			// 	scope.SetExtra("jobSpec", p.Cmd. .j.Spec)
+			// 	scope.SetExtra("jobExecutions", j.count)
+			// 	scope.SetExtra("jobShell", j.shell)
+			// 	scope.SetExtra("jobMaxRSS", j.Stats.MaxRss)
+			// 	scope.SetExtra("jobMeanRSS", j.Stats.MeanRss)
+			// 	scope.SetLevel(sentry.LevelError)
+			// 	sentry.CaptureMessage(fmt.Sprintf("apcron: cronjob finished with error: %s", err.Error()))
+			// })
+			//, map[string]string{"program": "apcron", "cmd": p.Cmd})
 		}
 		log.Printf("Process: %s Finished  \n", p)
 		done <- p.JobID
@@ -126,14 +138,3 @@ func (p *Process) outPrinter(r io.Reader, prefix string, c color.Attribute) {
 		fmt.Fprintf(os.Stderr, "process.outPrinter: Error scanning out for %d:  %v\n", p.ID, err)
 	}
 }
-
-// func sentryLog(cmd string, out []byte, err error) {
-// 	if cfg.SentryDSN != "" {
-// 		message := fmt.Sprintln("Error executing command", cmd)
-// 		client, err := raven.NewWithTags(cfg.SentryDSN, map[string]string{"program": "go-cron", "error": err.Error(), "command": cmd})
-// 		if err == nil {
-// 			packet := &raven.Packet{Message: message, Extra: map[string]interface{}{"command": cmd, "output": string(out)}}
-// 			client.Capture(packet, nil)
-// 		}
-// 	}
-// }

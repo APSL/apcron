@@ -12,6 +12,7 @@ import (
 
 	"github.com/apsl/apcron/manager"
 	"github.com/apsl/apcron/parser"
+	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/olekukonko/tablewriter"
 	"github.com/robfig/cron"
@@ -39,6 +40,18 @@ func init() {
 
 func main() {
 	flag.Parse()
+	//raven.SetDSN(cfg.SentryDSN)
+	//raven.SetDefaultLoggerName("apcron")
+	//raven.SetIncludePaths([]string{"manager", "process", "main.go", "parser"})
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:     cfg.SentryDSN,
+		Release: "apcron",
+	})
+
+	if err != nil {
+		fmt.Printf("Sentry initialization failed: %v\n", err)
+	}
 
 	file, err := os.Open(cfg.CrontabPath)
 	if err != nil {

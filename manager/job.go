@@ -1,11 +1,13 @@
 package manager
 
 import (
+	"fmt"
 	"log"
 	"runtime"
 	"sync"
 
 	"github.com/apsl/apcron/process"
+	"github.com/getsentry/sentry-go"
 )
 
 type jobID int
@@ -53,6 +55,18 @@ func (j *Job) start() {
 	err := p.Run(j.done)
 	if err != nil {
 		log.Printf("Run.start: Error launching process %s: %s", p, err)
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetTag("apcron-version", "v")
+			scope.SetExtra("jobCmd", j.cmd)
+			scope.SetExtra("jobSpec", j.Spec)
+			scope.SetExtra("jobExecutions", j.count)
+			scope.SetExtra("jobShell", j.shell)
+			scope.SetExtra("jobMaxRSS", j.Stats.MaxRss)
+			scope.SetExtra("jobMeanRSS", j.Stats.MeanRss)
+			scope.SetLevel(sentry.LevelError)
+			sentry.CaptureMessage(fmt.Sprintf("apcron: Error running cronjob: %s", err.Error()))
+			//sentry.CaptureException(err)
+		})
 		return
 	}
 	j.process = p

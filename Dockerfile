@@ -1,8 +1,12 @@
-FROM golang:1.4.2
-COPY . /go/src/go-cron
-WORKDIR /go/src/go-cron
-
-ENV GOPATH /go/src/go-cron/Godeps/_workspace:$GOPATH
-RUN go install -v 
-
-ENTRYPOINT ["go-cron"]
+FROM golang:alpine as builder
+RUN mkdir /build 
+ADD . /build/
+WORKDIR /build 
+RUN go build -o main .
+FROM alpine
+RUN adduser -S -D -H -h /app appuser
+USER appuser
+COPY crontab.yaml /app/
+COPY --from=builder /build/main /app/
+WORKDIR /app
+CMD ["./main"]
